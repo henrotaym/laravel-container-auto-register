@@ -1,0 +1,80 @@
+name: 📝 Github Release
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Create and Publish Github Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.ACTION_GITHUB_FOREMAN_APP_ID }}
+          private-key: ${{ secrets.ACTION_GITHUB_FOREMAN_APP_PRIVATE_KEY }}
+
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Configure Git User
+        run: |
+          git config user.name "trustup-foreman[bot]"
+          git config user.email "${{ secrets.ACTION_GITHUB_FOREMAN_APP_ID }}+trustup-foreman[bot]@users.noreply.github.com"
+
+      - name: Setup bun 1
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check for new version
+        id: version_check
+        run: |
+          old_version=$(jq -r .version package.json)
+          bun changeset version
+          new_version=$(jq -r .version package.json)
+          has_changesets=$([ "$old_version" == "$new_version" ] && echo false || echo true)
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "has_changesets=$has_changesets" >> $GITHUB_OUTPUT
+
+      - name: Commit release files
+        if: steps.version_check.outputs.has_changesets == 'true'
+        run: |
+          git add .
+          git commit -m "📝 Release v${{ steps.version_check.outputs.new_version }}"
+
+      - name: Publish to registry and create Git tags
+        if: steps.version_check.outputs.has_changesets == 'true'
+        run: bun changeset publish
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+
+      - name: Push changes and tags
+        if: steps.version_check.outputs.has_changesets == 'true'
+        run: git push --follow-tags
+
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.has_changesets == 'true'
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          VERSION="${{ steps.version_check.outputs.new_version }}"
+          TAG="v${VERSION}"
+
+          NOTES=$(awk -v version="## ${VERSION}" '/^## / {if (p) exit; if ($0 ~ version) p=1; next} p' CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            echo "Could not find changelog entries for version ${VERSION}."
+            exit 1
+          fi
+
+          gh release create "$TAG" --title "$TAG" --notes "$NOTES"
