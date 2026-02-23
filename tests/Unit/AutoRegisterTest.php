@@ -2,6 +2,7 @@
 namespace Henrotaym\LaravelContainerAutoRegister\Tests\Unit;
 
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Henrotaym\LaravelContainerAutoRegister\Tests\TestCase;
@@ -22,12 +23,12 @@ class AutoRegisterTest extends TestCase
 {
     use InstallPackageTest;
 
-    public function setup(): void
+    public function setUp(): void
     {
-        parent::setup();
+        parent::setUp();
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_not_registering_not_auto_registrable()
     {
         $this->scanFolder();
@@ -35,21 +36,21 @@ class AutoRegisterTest extends TestCase
         app()->make(QueryNotAutoRegistrableContract::class);
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_registering_auto_registrable()
     {
         $this->scanFolder();
         $this->assertInstanceOf(QueryAutoRegistrable::class, app()->make(QueryAutoRegistrableContract::class));
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_registering_nested_auto_registrable()
     {
         $this->scanFolder();
         $this->assertInstanceOf(NestedQueryAutoRegistrable::class, app()->make(NestedQueryAutoRegistrableContract::class));
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_reporting_wrong_path()
     {
         $path = __DIR__ . "/testastos";
@@ -59,10 +60,11 @@ class AutoRegisterTest extends TestCase
                 return $message === FolderNotFound::path($path)->getMessage();
             });
 
-        $this->scanFolder($path);
+        $result = $this->getAutoRegister()->scan($path, "Henrotaym\LaravelContainerAutoRegister\Tests\Unit\AutoRegister");
+        $this->assertNull($result);
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_scanning_where_returning_null_if_invalid_class()
     {
         $this->mockAutoRegister();
@@ -73,26 +75,26 @@ class AutoRegisterTest extends TestCase
         $this->assertNull($this->mocked_auto_register->scanWhere($this->undefined_class));
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_scanning_correctly_with_correct_class()
     {
         $this->mockAutoRegister();
 
         $this->mocked_auto_register->expects()->scanWhere($this->valid_class)->passthru();
         $this->mocked_auto_register->expects()->scan()
-            ->with( realpath(__DIR__ .'\AutoRegister'), 'Henrotaym\LaravelContainerAutoRegister\Tests\Unit\AutoRegister')
+            ->with( realpath(__DIR__ .'/AutoRegister'), 'Henrotaym\LaravelContainerAutoRegister\Tests\Unit\AutoRegister')
             ->andReturn(collect());
 
         $this->assertNotNull($this->mocked_auto_register->scanWhere($this->valid_class));
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_add_single_class_return_null_if_not_a_class()
     {
         $this->assertNull($this->getAutoRegister()->add($this->undefined_class));
     }
 
-    /** @test */
+    #[Test]
     public function auto_register_add_single_class_return_registered_classes_if_valid()
     {
         $this->assertCount(
@@ -135,7 +137,7 @@ class AutoRegisterTest extends TestCase
         return app(AutoRegisterContract::class);
     }
 
-    protected function scanFolder(string $path = null)
+    protected function scanFolder(?string $path = null)
     {
         $path = $path ?? __DIR__ . '/AutoRegister';
         $namespace = "Henrotaym\LaravelContainerAutoRegister\Tests\Unit\AutoRegister";

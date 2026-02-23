@@ -60,7 +60,7 @@ class ClassToRegister implements ClassToRegisterContract
 
     protected function setInterfaces(): self
     {
-        $this->interfaces = collect(optional($this->reflected)->getInterfaceNames());
+        $this->interfaces = collect($this->reflected?->getInterfaceNames() ?? []);
 
         return $this->setRegistrableInterface();
     }

@@ -52,7 +52,7 @@ class AutoRegister implements AutoRegisterContract
      * @param string $namespace
      * @return void
      */
-    protected function addFile(string $file, string $actual_path, string $namespace)
+    protected function addFile(string $file, string $actual_path, string $namespace): void
     {
         if ($file === "." || $file === ".."):
             return;
@@ -63,7 +63,8 @@ class AutoRegister implements AutoRegisterContract
 
         // Recursively calling itself for subdirectories.
         if (is_dir($file_path)):
-            return $this->addFolder($file_path, $file_namespace);
+            $this->addFolder($file_path, $file_namespace);
+            return;
         endif;
 
         // Removing file extension for classname.
@@ -72,7 +73,7 @@ class AutoRegister implements AutoRegisterContract
         $class_to_register = app()->make(ClassToRegisterContract::class)
             ->setClass($class);
 
-        return $this->registerClass($class_to_register);
+        $this->registerClass($class_to_register);
     }
 
     /**

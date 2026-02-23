@@ -25,7 +25,7 @@ class LaravelContainerAutoRegisterServiceProvider extends VersionablePackageServ
         return Package::class;
     }
 
-    protected function bindAutoRegisterService()
+    protected function bindAutoRegisterService(): self
     {
         $this->app->bind(ClassToRegisterContract::class, ClassToRegister::class);
         $this->app->bind(AutoRegisterContract::class, AutoRegister::class);

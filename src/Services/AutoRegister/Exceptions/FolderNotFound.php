@@ -49,7 +49,7 @@ class FolderNotFound extends Exception
      * 
      * @return array
      */
-    public function context()
+    public function context(): array
     {
         return [
             'path' => $this->path
