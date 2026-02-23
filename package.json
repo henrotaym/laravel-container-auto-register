@@ -1,6 +1,6 @@
 {
     "name": "laravel-container-auto-register",
-    "version": "1.2.1",
+    "version": "2.0.0",
     "main": "index.js",
     "repository": "git@github.com:henrotaym/laravel-container-auto-register.git",
     "author": "Mathieu Henrotay <mathieu.henrotay@gmail.com>",
